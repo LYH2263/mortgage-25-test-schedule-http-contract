@@ -8,19 +8,23 @@ def equal_payment_schedule(principal: float, annual_rate: float, months: int) ->
         pay = P / n
     else:
         pay = P * r * (1 + r) ** n / ((1 + r) ** n - 1)
+    # 月供先按分取整并在全周期内固定，尾差全部压入末期；
+    # 利息与本金均按上期末余额（分）口径逐期结转，
+    # 保证 利息合计 + 本金 = 还款合计（一分钱口径恒等）。
+    pay = round(pay, 2)
     rows = []
-    bal = P
+    bal = round(P, 2)
     interest_sum = 0.0
     for i in range(1, n + 1):
-        interest = bal * r
-        principal_part = pay - interest
+        interest = round(bal * r, 2)
         if i == n:
             principal_part = bal
-            pay_i = principal_part + interest
+            pay_i = round(principal_part + interest, 2)
         else:
             pay_i = pay
-        bal = max(0.0, bal - principal_part)
-        interest_sum += interest
+            principal_part = round(pay_i - interest, 2)
+        bal = round(bal - principal_part, 2)
+        interest_sum = round(interest_sum + interest, 2)
         rows.append({
             "period": i,
             "payment": round(pay_i, 2),
@@ -29,8 +33,8 @@ def equal_payment_schedule(principal: float, annual_rate: float, months: int) ->
             "balance": round(bal, 2),
         })
     return {
-        "monthly_payment": round(pay if n else 0, 2),
-        "total_interest": round(interest_sum, 2),
+        "monthly_payment": pay,
+        "total_interest": interest_sum,
         "total_payment": round(sum(x["payment"] for x in rows), 2),
         "rows": rows,
     }
